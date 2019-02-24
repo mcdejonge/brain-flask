@@ -64,7 +64,7 @@ class BrainDir:
                 continue
             processed_items.append({
                 'type'  : file_extension.replace('.', '').lower(),
-                'path'  : file_path,
+                'path'  : os.path.relpath(file_path, self.__basedir),
                 'title' : title,
                 'children' : None
             })
@@ -76,7 +76,7 @@ class BrainDir:
             children = self.__flatten(dir_dict, dir_dict[dir_path])
             item = {
                 'type'  : None,
-                'path'  : dir_path,
+                'path'  : os.path.relpath(dir_path, self.__basedir),
                 'title' : title,
                 'children' : children
             }
