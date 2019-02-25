@@ -1,7 +1,7 @@
 import sys 
 import os
 
-class BrainDir:
+class DirParse:
     """
     Create a list of items in a directory. Recursively.
     Each item looks like this:
@@ -89,7 +89,7 @@ if __name__ == '__main__':
         print("Usage: " + sys.argv[0] + " path/to/base/dir")
         sys.exit()
     
-    braindir = BrainDir(sys.argv[1])
+    dirparse = DirParse(sys.argv[1])
 
-    print(braindir.get_contents())
+    print(dirparse.get_contents())
 

@@ -1,1 +1,1 @@
-FLASK_APP=brain.py
+FLASK_APP=brain
