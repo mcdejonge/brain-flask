@@ -41,11 +41,26 @@ def get_file(filepath):
         current_app.logger.debug("Requested path does not exist on filesystem: " + fullpath)
         abort(404)
 
+    # What happens exactly depends on the file type
+    filetype = dirparser.get_item_at_path(filepath)['type']
+    if filetype == 'html':
+        f = open(fullpath, 'r')
+        return f.read()
+ 
+    if filetype == 'md':
+        import markdown
+        from flask import Markup
+        f = open(fullpath, 'r')
+        content = f.read()
+        return Markup(markdown.markdown(content))
+        
+    #
+
+    # We don't know the file type. Send out as download.
     return send_from_directory(current_app.config['filedir'], filepath)
     f = open(fullpath, 'r')
     # return jsonify(f.read())
     return f.read()
-
 
 
 
