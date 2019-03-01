@@ -9,7 +9,7 @@ Vue.component('filelist',  {
 <div>
 <ul v-for="item in filelist">
         <li v-if="item.children == null">
-          <a :href="'/files/view/' + item.path">{{ item.title }}</a>
+          <a :href="'/files/view/' + item.path" v-on:click="loadFile">{{ item.title }}</a>
         </li>
         <li v-if="item.children">
           {{ item.title }}
@@ -30,7 +30,7 @@ window.addEventListener('load', function () {
   };
 
   var filelist = new Vue({ 
-    el: '#filelist', 
+    el: '#wrapper', 
     data: { 
       'filelist' : null
     }, 
@@ -43,6 +43,11 @@ window.addEventListener('load', function () {
         self.filelist= json;
       })
      }, 
+    methods: {
+      loadFile: function(event) {
+        console.log('nou daar gaan we');
+      },
+    },
   });
 
 
