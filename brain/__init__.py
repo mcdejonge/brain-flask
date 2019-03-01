@@ -28,6 +28,7 @@ def create_app(test_config=None):
     from . import files
     app.register_blueprint(files.files)
 
-    
+    from . import editor
+    app.register_blueprint(editor.editor)
 
     return app
