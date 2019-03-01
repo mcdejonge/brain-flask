@@ -24,8 +24,6 @@ def create_app(test_config=None):
 
     with app.app_context():
         app.config['filedir'] = config.get('DEFAULTS', 'filedir')
-        from brain import dirparse
-        app.config['dirparser'] = dirparse.DirParse(config.get('DEFAULTS', 'filedir'))
 
     from . import files
     app.register_blueprint(files.files)

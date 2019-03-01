@@ -14,6 +14,11 @@ class DirParse:
 
     __contents = [] 
 
+    """
+    Hopefully this will speed up lookups. Key: the path. Value: a directory item (see above).
+    """
+    __known_paths = {}
+
 
     def __init__(self, basedir):
         self.__basedir = basedir
@@ -27,13 +32,6 @@ class DirParse:
         }
         
         for root, dirs, files in os.walk(self.__basedir):
-            """
-            print("------------------")
-            print(root)
-            print(dirs)
-            print(files)
-            sys.exit();
-            """
             dir_dict[root] = {
                     'files' : [os.path.join(root, file_path) for file_path in files],
                     'dirs' : [os.path.join(root, dir_path) for dir_path in dirs]
@@ -62,12 +60,14 @@ class DirParse:
             title = os.path.basename(filename).lower()
             if title.startswith('.'):
                 continue
-            processed_items.append({
+            item = {
                 'type'  : file_extension.replace('.', '').lower(),
                 'path'  : os.path.relpath(file_path, self.__basedir),
                 'title' : title,
                 'children' : None
-            })
+            }
+            processed_items.append(item)
+            self.__known_paths[item['path']] = item
 
         for dir_path in dir_dict_item['dirs']:
             title = os.path.basename(dir_path).lower()
@@ -81,8 +81,24 @@ class DirParse:
                 'children' : children
             }
             processed_items.append(item)
+            self.__known_paths[item['path']] = item
 
         return sorted(processed_items, key=lambda item: item['title'])
+
+
+    def get_item_at_path(self, path):
+        """
+        Return the item at the given path. Or None, if it does not exist.
+        """
+
+        if len(self.__contents) == 0:
+            self.traverse()
+
+        if path in self.__known_paths:
+            return self.__known_paths[path]
+        return None
+
+
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -92,4 +108,6 @@ if __name__ == '__main__':
     dirparse = DirParse(sys.argv[1])
 
     print(dirparse.get_contents())
+
+
 
