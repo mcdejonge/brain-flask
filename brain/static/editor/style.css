@@ -1,0 +1,40 @@
+
+#wrapper {
+}
+
+#filelist {
+  width: 20%;
+  display: block;
+  float: left;
+  border-right: 1px solid #999;
+  overflow: hidden;
+}
+
+#filelist li {
+  list-style: none;
+}
+#filelist li.submenu {
+  list-style: none;
+  cursor: pointer;
+}
+#filelist li.submenu-closed div {
+  display: none;
+}
+
+
+#filelist li.submenu:before {
+    content: "+";
+    margin-right: 4px;
+}
+
+#editor {
+  width: 75%;
+  display: block;
+  float: right;
+}
+
+#editor textarea {
+  width: 70vw;
+  height: 80vh;
+}
+

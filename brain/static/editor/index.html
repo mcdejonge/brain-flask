@@ -13,10 +13,12 @@
   <body>
     <div id="wrapper">
       <div id="filelist">
-        <filelist v-bind:filelist="filelist"
+        <filelist v-bind:filelist="filelist" v-bind:container="container"
         ></filelist>
       </div>
       <div id="editor">
+        <h2>{{filetitle}}</h2>
+        <textarea v-model="filecontents" @input="update"></textarea>
       </div>
     </div>
   </body>

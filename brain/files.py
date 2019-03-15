@@ -41,6 +41,17 @@ def get_file(filepath):
         current_app.logger.debug("Requested path does not exist on filesystem: " + fullpath)
         abort(404)
 
+    contents = ''
+    f = open(fullpath, 'r')
+    contents = f.read()
+    filetype = dirparser.get_item_at_path(filepath)['type']
+
+    if request_wants_json():
+        return jsonify({
+            'type' : filetype,
+            'contents' : contents
+            })
+    
     # What happens exactly depends on the file type
     filetype = dirparser.get_item_at_path(filepath)['type']
     if filetype == 'html':
@@ -63,5 +74,12 @@ def get_file(filepath):
     return f.read()
 
 
-
-
+# Copied from http://flask.pocoo.org/snippets/45/
+#
+# Why check if json has a higher quality than HTML and not just go with the best match? Because some browsers accept on */* and we don't want to deliver JSON to an ordinary browser.
+def request_wants_json():
+    best = request.accept_mimetypes \
+        .best_match(['application/json', 'text/html'])
+    return best == 'application/json' and \
+        request.accept_mimetypes[best] > \
+        request.accept_mimetypes['text/html']
