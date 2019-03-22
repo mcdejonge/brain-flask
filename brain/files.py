@@ -27,6 +27,45 @@ def index():
     contents = dirparser.get_contents()
     return jsonify(contents)
 
+@files.route('/create', methods=['POST'])
+def create_file():
+
+    filepath = request.form['filepath']
+
+    dirparser = dirparse.DirParse(current_app.config['filedir'])
+
+    if dirparser.get_item_at_path(filepath) != None:
+        current_app.logger.debug("Attempt to create already existing file" + filepath)
+        abort(409)
+
+    fullpath = os.path.join(current_app.config['filedir'], filepath)
+
+    f = open(fullpath, 'w')
+    f.write('')
+
+    return redirect('/files/view/' + filepath, code=303)
+
+
+@files.route('/save/<path:filepath>', methods=['PUT', 'POST'])
+def save_file(filepath):
+    dirparser = dirparse.DirParse(current_app.config['filedir'])
+
+    if dirparser.get_item_at_path(filepath) == None:
+        current_app.logger.debug("Attempt to save non-existent path " + filepath)
+        abort(404)
+
+    fullpath = os.path.join(current_app.config['filedir'], filepath)
+    if not os.path.isfile(fullpath):
+        current_app.logger.debug("Requested path does not exist on filesystem: " + fullpath)
+        abort(404)
+
+    filecontents = request.form['filecontents']
+
+    f = open(fullpath, 'w')
+    f.write(filecontents)
+
+    return redirect('/files/view/' + filepath, code=303)
+
 @files.route('/view/<path:filepath>', methods=['GET'])
 def get_file(filepath):
 
@@ -72,6 +111,7 @@ def get_file(filepath):
     f = open(fullpath, 'r')
     # return jsonify(f.read())
     return f.read()
+
 
 
 # Copied from http://flask.pocoo.org/snippets/45/

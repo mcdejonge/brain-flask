@@ -53,6 +53,7 @@ window.addEventListener('load', function () {
       'filetype'      : 'txt',
       'filetitle'     : '',
       'container'     : null,
+      'filepath'      : '',
     }, 
     components: {
       FileList,
@@ -83,11 +84,34 @@ window.addEventListener('load', function () {
           self.filecontents = json.contents;
           self.filetype = json.type;
           self.filetitle = title;
+          self.filepath = url;
         });
       },
 
+      // Debounced version
+      autosave: _.debounce(() => {
+        filelist.saveFile();
+      }, 1000),
+
+
+      // Non-debounced version
       update: function(event) {
-        console.log('here updating happens');
+        event.preventDefault();
+        event.stopPropagation();
+        filelist.saveFile();
+      },
+
+      
+      // The method that does the saving.
+      saveFile() {
+        self = this;
+        $.ajax({
+          url: '/files/save/' + self.filepath,
+          type: 'PUT',
+          // TODO failure melden
+          data: {'filecontents': self.filecontents},
+        });
+        
       },
 
     },
