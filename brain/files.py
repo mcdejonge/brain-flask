@@ -79,7 +79,7 @@ def get_file(filepath):
     if not os.path.isfile(fullpath):
         current_app.logger.debug("Requested path does not exist on filesystem: " + fullpath)
         abort(404)
-
+    
     contents = ''
     f = open(fullpath, 'r')
     contents = f.read()
@@ -90,7 +90,7 @@ def get_file(filepath):
             'type' : filetype,
             'contents' : contents
             })
-    
+
     # What happens exactly depends on the file type
     filetype = dirparser.get_item_at_path(filepath)['type']
     if filetype == 'html':

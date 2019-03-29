@@ -10,22 +10,66 @@ Vue.component('filelist',  {
   template:
 `
 <div>
-<ul v-for="item in filelist" class="filelist">
-        <li v-if="item.children == null">
-          <a :href="'/files/view/' + item.path" v-on:click="openFile(item.title, item.path, $event)">{{ item.title }}</a>
-        </li>
-        <li v-if="item.children" class="submenu submenu-closed" v-on:click="toggleVisible">
-          {{ item.title }}
-          <filelist
-            v-bind:filelist="item.children"
-            v-bind:container="container">
-          </filelist>
-        </li>
-      
-    </ul>
-  </div>
+  <button class="new_button new_button_top" v-on:click="addFile($event)" v-if="filelist && filelist.length > 10">Nieuw</button>
+  <ul v-for="item in filelist" class="filelist">
+    <li v-if="item.children == null">
+      <a :href="'/files/view/' + item.path" v-on:click="openFile(item.title, item.path, $event)">{{ item.title }}</a>
+    </li>
+    <li v-if="item.children" class="submenu submenu-closed" v-on:click="toggleVisible">
+      {{ item.title }}
+      <filelist
+        v-bind:filelist="item.children"
+        v-bind:container="container">
+      </filelist>
+    </li>
+  </ul>
+  <button v-on:click="addFile($event)" class="new_button new_button_bottom">Nieuw</button>
+</div>
 `,
   methods: {
+    addFile: function(event) {
+      event.stopPropagation();
+
+
+      // HACK extract the base path from the first item in the file list.
+      var path = this.filelist[0].path;
+      if(path.match(/\//)) {
+        path = path.replace(/\/[^\/]+$/, '/');
+      } 
+      else {
+        path = '';
+      }
+      var fileName = window.prompt("Bestandsnaam", '*.md');
+      if(! fileName) {
+        return;
+      }
+
+      // Default to md files.
+      if(! fileName.match(/\.[^\.]+$/)) {
+        fileName = fileName + '.md';
+      }
+
+      var url = path + fileName;
+      var title = fileName.replace(/\.[^\.]+$/, '');
+      var openFileMethod = this.container.$options.methods.openFile;
+      var container = this.container;
+      var loadListMethod = this.container.$options.methods.loadList;
+
+      $.ajax({
+        url:    '/files/create',
+        type:   'POST',
+        data:   {
+          'filepath' : url,
+        },
+        success:  function() {
+          openFileMethod(title, url, container);
+          loadListMethod(container);
+        },
+        error: function() {
+          alert('Bestandsnaam ongeldig.');
+        }
+      });
+    },
     openFile: function(title, url, event) {
       event.preventDefault();
       event.stopPropagation();
@@ -59,13 +103,25 @@ window.addEventListener('load', function () {
       FileList,
     },
     mounted: function () { 
-      var self = this;
-      self.container = self; // Needed to load file data from a nested file list
-      $.getJSON(apiURLs['filelist'], json => {
-        self.filelist= json;
-      })
-     }, 
+      this.loadList();
+    }, 
     methods: {
+
+      /**
+       * Load the file list.
+       * @param context optional: supply the variable to use as "this"
+       */
+      loadList: function(context) {
+        var self = this;
+        if(context) {
+          self = context;
+        }
+        self.container = self; // Needed to load file data from a nested file list
+        $.getJSON(apiURLs['filelist'], json => {
+          self.filelist= json;
+        })
+      },
+
       /**
        * Read data from an URL into filecontents.
        * @param title the title to display
@@ -75,6 +131,7 @@ window.addEventListener('load', function () {
        * own object.
        */
       openFile: function(title, url, context) {
+        console.log('Asked to open file ' + title + ' at url ' + url);
         var self = context;
         $.getJSON('/files/view/' + url, json => {
           if(! 'content' in json || ! 'type' in json) {
