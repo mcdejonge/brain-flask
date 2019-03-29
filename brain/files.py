@@ -10,11 +10,13 @@ from flask import (
     render_template,
     request,
     send_from_directory,
+    send_file,
     session,
     url_for,
 )
 
 import os
+import io
 from brain import dirparse
 
 
@@ -80,10 +82,21 @@ def get_file(filepath):
         current_app.logger.debug("Requested path does not exist on filesystem: " + fullpath)
         abort(404)
     
+    filetype = dirparser.get_item_at_path(filepath)['type']
+    
+    # Not a displayable filetype. Send out as download.
+    if filetype not in ['html', 'txt', 'md']:
+        with open(fullpath, 'rb') as fh:
+            return send_file(
+                     io.BytesIO(fh.read()),
+                     attachment_filename=os.path.basename(fullpath),
+               )
+        # send_from_directory(os.path.dirname(fullpath), os.path.basename(fullpath), as_attachment = True)
+
+    # Still here? Display contents (or stuff it in JSON).
     contents = ''
     f = open(fullpath, 'r')
     contents = f.read()
-    filetype = dirparser.get_item_at_path(filepath)['type']
 
     if request_wants_json():
         return jsonify({
@@ -92,27 +105,13 @@ def get_file(filepath):
             })
 
     # What happens exactly depends on the file type
-    filetype = dirparser.get_item_at_path(filepath)['type']
-    if filetype == 'html':
-        f = open(fullpath, 'r')
-        return f.read()
  
     if filetype == 'md':
         import markdown
         from flask import Markup
-        f = open(fullpath, 'r')
-        content = f.read()
         return Markup(markdown.markdown(content))
-        
-    #
 
-    # We don't know the file type. Send out as download.
-    return send_from_directory(current_app.config['filedir'], filepath)
-    f = open(fullpath, 'r')
-    # return jsonify(f.read())
-    return f.read()
-
-
+    return contents
 
 # Copied from http://flask.pocoo.org/snippets/45/
 #
