@@ -13,7 +13,7 @@ Vue.component('filelist',  {
   <button class="new_button new_button_top" v-on:click="addFile($event)" v-if="filelist && filelist.length > 10">Nieuw</button>
   <ul v-for="item in filelist" class="filelist">
     <li v-if="item.children == null">
-      <a :href="'/files/view/' + item.path" v-on:click="openFile(item.title, item.path, $event)">{{ item.title }}</a>
+      <a :href="'/files/view/' + item.path" v-on:click="openFile(item, $event)" >{{ item.title }}</a>
     </li>
     <li v-if="item.children" class="submenu submenu-closed" v-on:click="toggleVisible">
       {{ item.title }}
@@ -70,10 +70,10 @@ Vue.component('filelist',  {
         }
       });
     },
-    openFile: function(title, url, event) {
+    openFile: function(file, event) {
       event.preventDefault();
       event.stopPropagation();
-      this.container.$options.methods.openFile(title, url, this.container);
+      this.container.$options.methods.openFile(file, this.container);
     },
     toggleVisible(event) {
       event.target.classList.toggle('submenu-closed')
@@ -123,15 +123,24 @@ window.addEventListener('load', function () {
       },
 
       /**
-       * Read data from an URL into filecontents.
-       * @param title the title to display
-       * @param url the url to load the data from
+       * Read data for an item into filecontents, but only if it's viewable
+       * (viewable means: markdown, html or text).
+       * @param item the file item to display.
        * @param context the context to use, ie this object. The child needs to
        * pass its parent to us this way because otherwise we can't find our
        * own object.
        */
-      openFile: function(title, url, context) {
-        console.log('Asked to open file ' + title + ' at url ' + url);
+      openFile: function(item, context) {
+        var url = item.path;
+        var title = item.title;
+        var type = item.type;
+
+        console.log('Asked to open file ' + title + ' of type ' + type +  ' at url ' + url);
+        // Not a type we can show. Force download.
+        if (type != 'md' && type != 'html' && type != 'txt') {
+          document.location = '/files/view/' + url;
+        }
+        // It's a type we can show. Show it.
         var self = context;
         $.getJSON('/files/view/' + url, json => {
           if(! 'content' in json || ! 'type' in json) {
