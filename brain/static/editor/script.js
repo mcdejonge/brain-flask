@@ -13,7 +13,7 @@ Vue.component('filelist',  {
   <button class="new_button new_button_top" v-on:click="addFile($event)" v-if="filelist && filelist.length > 10">Nieuw</button>
   <ul v-for="item in filelist" class="filelist">
     <li v-if="item.children == null">
-      <a :href="'/files/view/' + item.path" v-on:click="openFile(item, $event)" >{{ item.title }}</a>
+      <a :href="'/files/view/' + item.path" v-on:click="openFile(item, $event)" :title="item.title" >{{ item.title }}</a>
     </li>
     <li v-if="item.children" class="submenu submenu-closed" v-on:click="toggleVisible">
       {{ item.title }}
