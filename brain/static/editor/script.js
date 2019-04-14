@@ -50,7 +50,6 @@ Vue.component('filelist',  {
 
       var url = path + fileName;
       var title = fileName.replace(/\.[^\.]+$/, '');
-      var openFileMethod = this.container.$options.methods.openFile;
       var container = this.container;
       var loadListMethod = this.container.$options.methods.loadList;
 
@@ -60,15 +59,27 @@ Vue.component('filelist',  {
         data:   {
           'filepath' : url,
         },
-        success:  function() {
-          openFileMethod(title, url, container);
-          loadListMethod(container);
+        success: function() {
+          // Nasty. In the redirect the fact that we want json data gets lost.
+          // So instead we have to manually call the view url and  load the
+          // data.
+          $.getJSON('/files/view/' + url, json => {
+
+            // TODO duplicate code
+            container.filecontents = json.contents;
+            container.filetype = json.type;
+            container.filetitle = title;
+            container.filepath = url;
+
+            loadListMethod(container);
+          });
         },
         error: function() {
           alert('Bestandsnaam ongeldig.');
         }
       });
     },
+
     openFile: function(file, event) {
       event.preventDefault();
       event.stopPropagation();
@@ -242,6 +253,40 @@ window.addEventListener('load', function () {
           data: {'filecontents': self.filecontents},
         });
         
+      },
+
+      /**
+       * Helper method for unloading the current file from memory.
+       */
+      unloadFile: function() {
+        this.filecontents = '';
+        this.filetype = 'txt';
+        this.filetitle = '';
+        this.filepath = '';
+        this.wantsSave = false;
+      },
+
+      /**
+       * Delete.
+       */
+      deletefile: function(event) {
+        if(! confirm('Zeker weten?')) {
+          return;
+        }
+        var filepath = this.filepath;
+        this.unloadFile();
+
+        var container = this.container;
+        var loadListMethod = this.container.$options.methods.loadList;
+
+        $.ajax({
+          url: '/files/delete/' + filepath,
+          type: 'DELETE',
+          success:  function() {
+            loadListMethod(container);
+          },
+
+        })
       },
 
     },

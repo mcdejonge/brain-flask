@@ -29,6 +29,23 @@ def index():
     contents = dirparser.get_contents()
     return jsonify(contents)
 
+@files.route('/delete/<path:filepath>', methods=['DELETE'])
+def delete_file(filepath):
+    dirparser = dirparse.DirParse(current_app.config['filedir'])
+
+    if dirparser.get_item_at_path(filepath) == None:
+        current_app.logger.debug("Attempt to delete non-existent path " + filepath)
+        return ''
+
+    fullpath = os.path.join(current_app.config['filedir'], filepath)
+    if not os.path.isfile(fullpath):
+        current_app.logger.debug("Requested path to delete does not exist on filesystem: " + fullpath)
+        return ''
+
+    os.remove(fullpath)
+
+    return ''
+
 @files.route('/create', methods=['POST'])
 def create_file():
 

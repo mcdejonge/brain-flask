@@ -20,9 +20,10 @@
       </div>
       <div id="editor">
         <h2 contenteditable="true" @input="updatetitle">{{filetitle}}</h2>
+        <button v-on:click="deletefile" v-if="filetitle" >X</button>
         <form name="editform" :action="'/files/save/' + filepath" method="POST" >
           <textarea name="filecontents" v-model="filecontents" @input="autosave"></textarea>
-            <input type="submit" v-on:click="update" value="Opslaan">
+            <input type="submit" v-on:click="update" value="Opslaan" v-if="filetitle">
         </form>
       </div>
     </div>
