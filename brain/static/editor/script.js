@@ -173,7 +173,10 @@ window.addEventListener('load', function () {
       saveTitle: function() {
         var self = this;
         var container = self.ftcontainer;
-        var newtitle = container.innerText;
+        var newtitle = container.innerText.trim();
+        if (! newtitle)  {
+          return;
+        }
         $.ajax({
           url: '/files/rename/' + self.filepath,
           type: 'POST',
