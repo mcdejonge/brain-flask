@@ -101,6 +101,10 @@ window.addEventListener('load', function () {
       // we store the element its displayed in. Then, when saving
       // we fetch the current value and update the file title
       'ftcontainer'     : null,
+      // To force saving before opening a new file AND to avoid saving an
+      // incorrect file.
+      // Note this only works well enough to avoid saving the new file.
+      'wantsSave'       : false,
     }, 
     components: {
       FileList,
@@ -144,6 +148,10 @@ window.addEventListener('load', function () {
         }
         // It's a type we can show. Show it.
         var self = context;
+        if(self.wantsSave) {
+          this.saveFile();
+          self.wantsSave = false;
+        }
         $.getJSON('/files/view/' + url, json => {
           if(! 'content' in json || ! 'type' in json) {
             console.log('no content or type in ', json);
@@ -197,8 +205,17 @@ window.addEventListener('load', function () {
       /**
        * Save contents of current file.
        */
+      // Set the wantsSave flag and trigger the debounced method.
+      autosave: function() {
+        if(this.wantsSave) {
+          return;
+        }
+        this.wantsSave = true;
+        this.autosaveDebounced();
+      },
+
       // Debounced version
-      autosave: _.debounce(() => {
+      autosaveDebounced: _.debounce(() => {
         filelist.saveFile();
       }, 1000),
 
@@ -206,12 +223,18 @@ window.addEventListener('load', function () {
       update: function(event) {
         event.preventDefault();
         event.stopPropagation();
+        self.wantsSave = true;
         filelist.saveFile();
       },
 
       // The method that does the saving.
       saveFile() {
         self = this;
+        if(! self.wantsSave) {
+          return;
+        }
+        self.wantsSave = false;
+
         $.ajax({
           url: '/files/save/' + self.filepath,
           type: 'PUT',
