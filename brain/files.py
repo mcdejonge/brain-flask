@@ -47,6 +47,41 @@ def create_file():
 
     return redirect('/files/view/' + filepath, code=303)
 
+@files.route('/rename/<path:filepath>', methods=['POST'])
+def rename_file(filepath):
+
+    new_title = request.form['newtitle']
+    new_title = " ".join(new_title.strip().split())
+
+    dirparser = dirparse.DirParse(current_app.config['filedir'])
+
+    if dirparser.get_item_at_path(filepath) == None:
+        current_app.logger.debug("Attempt to save non-existent path " + filepath)
+        abort(404)
+
+    fullpath = os.path.join(current_app.config['filedir'], filepath)
+    if not os.path.isfile(fullpath):
+        current_app.logger.debug("Requested path does not exist on filesystem: " + fullpath)
+        abort(404)
+
+    filetype = dirparser.get_item_at_path(filepath)['type']
+   
+    new_filedir, Nil = os.path.split(
+            os.path.join(current_app.config['filedir'], filepath))
+    
+    new_fullpath = os.path.join(new_filedir, new_title + '.' + filetype)
+
+    if os.path.exists(new_fullpath):
+        current_app.logger.debug('Denied request to move ' + fullpath + ' to existing file ' + new_fullpath)
+        abort(409)
+
+    os.rename(fullpath, new_fullpath)
+
+    # No redirect as that makes it impossible to load the new file as raw data.
+    # Instead just provide the url to redirect to.
+    return new_title + '.' + filetype
+    # return redirect('/files/view/' + new_title + '.' + filetype, code=303 )
+
 
 @files.route('/save/<path:filepath>', methods=['PUT', 'POST'])
 def save_file(filepath):
@@ -95,7 +130,11 @@ def get_file(filepath):
 
     # Still here? Display contents (or stuff it in JSON).
     contents = ''
-    f = open(fullpath, 'r')
+    # Not sure why but occasionally garbage utf ends up in these files.
+    # If that happens, it's better to just send out the file without raising
+    # a stink.
+    f = open(fullpath, 'r', encoding='utf-8',
+                 errors='ignore')
     contents = f.read()
 
     if request_wants_json():
@@ -109,7 +148,7 @@ def get_file(filepath):
     if filetype == 'md':
         import markdown
         from flask import Markup
-        return Markup(markdown.markdown(content))
+        return Markup(markdown.markdown(contents))
 
     return contents
 

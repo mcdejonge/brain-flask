@@ -1,4 +1,3 @@
-
 Vue.component('filelist',  {
   // The parent needs to pass itself because we're calling ourselves
   // recursively and we need to get to to top level object.
@@ -92,12 +91,16 @@ window.addEventListener('load', function () {
   var filelist = new Vue({ 
     el: '#wrapper', 
     data: { 
-      'filelist'      : null,
-      'filecontents'  : '',
-      'filetype'      : 'txt',
-      'filetitle'     : '',
-      'container'     : null,
-      'filepath'      : '',
+      'filelist'        : null,
+      'filecontents'    : '',
+      'filetype'        : 'txt',
+      'filetitle'       : '',
+      'container'       : null,
+      'filepath'        : '',
+      // HACK to make updating the filetitle work using contenteditable,
+      // we store the element its displayed in. Then, when saving
+      // we fetch the current value and update the file title
+      'ftcontainer'     : null,
     }, 
     components: {
       FileList,
@@ -135,7 +138,6 @@ window.addEventListener('load', function () {
         var title = item.title;
         var type = item.type;
 
-        console.log('Asked to open file ' + title + ' of type ' + type +  ' at url ' + url);
         // Not a type we can show. Force download.
         if (type != 'md' && type != 'html' && type != 'txt') {
           document.location = '/files/view/' + url;
@@ -154,11 +156,48 @@ window.addEventListener('load', function () {
         });
       },
 
+      /**
+       * Save title of current file.
+       */
+      // Update the current in memory title.
+      updatetitle: function(event) {
+        this.ftcontainer = event.target
+        this.saveTitleDebounced();
+      },
+      // Debounced version of the save method
+      saveTitleDebounced : _.debounce(() => {
+          filelist.saveTitle();
+        }, 500),
+
+      // The method that does the saving.
+      saveTitle: function() {
+        var self = this;
+        var container = self.ftcontainer;
+        var newtitle = container.innerText;
+        $.ajax({
+          url: '/files/rename/' + self.filepath,
+          type: 'POST',
+          data: {'newtitle' : newtitle},
+          error: function(response) {
+            console.log('Unable to rename file');
+            container.innerText = self.filetitle;
+          },
+          success: function(response) {
+            self.filetitle = newtitle;
+            self.filepath = response;
+            self.loadList();
+          }
+        });
+      },
+
+
+      /**
+       * Save contents of current file.
+       */
       // Debounced version
       autosave: _.debounce(() => {
         filelist.saveFile();
       }, 1000),
-
 
       // Non-debounced version
       update: function(event) {
@@ -167,7 +206,6 @@ window.addEventListener('load', function () {
         filelist.saveFile();
       },
 
-      
       // The method that does the saving.
       saveFile() {
         self = this;
